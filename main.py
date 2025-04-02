@@ -64,7 +64,7 @@ def command_assign_version(config: Config):
 
 
 def create_factory(command: Command) -> Callable[[Config], None]:
-    if command == Command.ASSIGN_VERSION:
+    if command == Command.ASSIGN_VERSION.value:
         return command_assign_version
     else:
         raise Exception(f"Unknown command: {command}")
