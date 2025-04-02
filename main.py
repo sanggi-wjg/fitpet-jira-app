@@ -82,7 +82,7 @@ def escape_version_key(text: str) -> List[Literal["API", "ADMIN", "SELLER", "CON
     match = re.search(r"\[([A-Z,\s]+)]", text)
     if match:
         roles = match.group(1)
-        return [role.strip() for role in roles.split(",")]
+        return [role.strip() for role in roles.split(",") if role in ["API", "ADMIN", "SELLER", "CONSUMER", "BATCH"]]
 
     raise Exception(f"Could not find version key in `{text}`")
 
