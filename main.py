@@ -89,7 +89,8 @@ def escape_version_key(text: str) -> List[Literal["API", "ADMIN", "SELLER", "CON
 
 def main(config: Config):
     if not config.jira_issue_key or not config.jira_version_key or len(config.jira_version_key) == 0:
-        raise Exception(f"Could not find issue key or version key in PR name: {config.pr_name}")
+        color.yellow(f"Skip Command: {config.command}. Reason: Could not parse issue or version key.")
+        return
 
     color.green(f"Start Command: {config.command} with PR: {config.pr_name}")
     create_factory(config.command)(config)
