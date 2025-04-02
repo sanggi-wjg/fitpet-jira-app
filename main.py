@@ -99,21 +99,21 @@ def main(config: Config):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Handling arguments.")
     parser.add_argument("-c", "--command", type=str, required=True)
-    parser.add_argument("-p", "--pr_name", type=str, required=True)
-    parser.add_argument("-js", "--jira_server", type=str, required=True)
-    parser.add_argument("-jp", "--jira_project", type=str, required=True)
-    parser.add_argument("-ju", "--jira_username", type=str, required=True)
-    parser.add_argument("-jt", "--jira_token", type=str, required=True)
+    parser.add_argument("-p", "--pr", type=str, required=True)
+    parser.add_argument("-js", "--server", type=str, required=True)
+    parser.add_argument("-jp", "--project", type=str, required=True)
+    parser.add_argument("-ju", "--username", type=str, required=True)
+    parser.add_argument("-jt", "--token", type=str, required=True)
 
     args = parser.parse_args()
     parsed_config = Config(
         command=args.command,
-        pr_name=args.pr_name,
+        pr_name=args.pr,
         jira_server=args.server,
         jira_project=args.project,
         jira_username=args.username,
         jira_token=args.token,
-        jira_issue_key=escape_issue_key(args.pr_name),
-        jira_version_key=escape_version_key(args.pr_name),
+        jira_issue_key=escape_issue_key(args.pr),
+        jira_version_key=escape_version_key(args.pr),
     )
     main(parsed_config)
