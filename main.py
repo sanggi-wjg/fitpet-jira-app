@@ -75,7 +75,7 @@ def escape_issue_key(text: str) -> str:
     if match:
         return match.group(1)
 
-    raise Exception(f"Could not find issue key in `{text}`")
+    return ""
 
 
 def escape_version_key(text: str) -> List[Literal["API", "ADMIN", "SELLER", "CONSUMER", "BATCH"]]:
@@ -84,7 +84,7 @@ def escape_version_key(text: str) -> List[Literal["API", "ADMIN", "SELLER", "CON
         roles = match.group(1)
         return [role.strip() for role in roles.split(",") if role in ["API", "ADMIN", "SELLER", "CONSUMER", "BATCH"]]
 
-    raise Exception(f"Could not find version key in `{text}`")
+    return []
 
 
 def main(config: Config):
