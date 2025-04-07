@@ -1,8 +1,6 @@
 # Fitpet Jira App
 
-
-
-## Add Github action 
+## Add Github action
 
 ```
 name: 😀 When PR Merged
@@ -13,6 +11,7 @@ on:
 
 jobs:
   assign-version-of-task:
+    if: github.event.pull_request.merged == true && github.base_ref == 'main'
     name: Assign Version of Task
     runs-on: ubuntu-latest
 
