@@ -2,11 +2,14 @@ import argparse
 import enum
 import re
 from dataclasses import dataclass, field
-from typing import Literal, Callable, List
+from typing import Literal, Callable, List, NewType
 
 from colorful_print import color
 from jira import JIRA, JIRAError, Issue
 from jira.resources import Version
+
+JiraVersionKeysAllowed = ["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"]
+JiraVersionKeyType = NewType("JiraIssueKeyType", Literal["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"])
 
 
 class Command(enum.Enum):
@@ -25,9 +28,7 @@ class Config:
     jira_token: str = field(metadata={"help": "Jira Token"})
 
     jira_issue_key: str = field(metadata={"help": "PR 이름으로 issue_key 를 찾습니다."})
-    jira_version_key: List[Literal["API", "ADMIN", "SELLER", "CONSUMER", "BATCH"]] = field(
-        metadata={"help": "PR 이름으로 version_key 를 찾습니다."}
-    )
+    jira_version_key: List[JiraVersionKeyType] = field(metadata={"help": "PR 이름으로 version_key 를 찾습니다."})
 
 
 def find_issue(config: Config) -> Issue:
@@ -78,13 +79,11 @@ def escape_issue_key(text: str) -> str:
     return ""
 
 
-def escape_version_key(text: str) -> List[Literal["API", "ADMIN", "SELLER", "CONSUMER", "BATCH"]]:
+def escape_version_key(text: str) -> List[JiraVersionKeyType]:
     match = re.search(r"\[([A-Z,\s]+)]", text)
     if match:
         roles = match.group(1)
-        return [
-            role.strip() for role in roles.split(",") if role.strip() in ["API", "ADMIN", "SELLER", "CONSUMER", "BATCH"]
-        ]
+        return [role.strip() for role in roles.split(",") if role.strip() in JiraVersionKeysAllowed]
 
     return []
 
