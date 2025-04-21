@@ -1,5 +1,7 @@
 # Fitpet Jira App
 
+[![🚜 Build and Test](https://github.com/sanggi-wjg/fitpet-jira-app/actions/workflows/build.yaml/badge.svg)](https://github.com/sanggi-wjg/fitpet-jira-app/actions/workflows/build.yaml)
+
 ## Add Github action
 
 ```
