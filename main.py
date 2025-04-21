@@ -65,7 +65,7 @@ def command_assign_version(config: Config):
 
 
 def create_factory(command: Command) -> Callable[[Config], None]:
-    if command == Command.ASSIGN_VERSION.value:
+    if command == Command.ASSIGN_VERSION:
         return command_assign_version
     else:
         raise Exception(f"Unknown command: {command}")
@@ -106,10 +106,10 @@ if __name__ == "__main__":
     parser.add_argument("-jp", "--project", type=str, required=True)
     parser.add_argument("-ju", "--username", type=str, required=True)
     parser.add_argument("-jt", "--token", type=str, required=True)
-
     args = parser.parse_args()
+
     parsed_config = Config(
-        command=args.command,
+        command=Command(args.command),
         pr_name=args.pr,
         jira_server=args.server,
         jira_project=args.project,
