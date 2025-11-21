@@ -61,7 +61,7 @@ if __name__ == "__main__":
         jira_token=args.token,
     )
     request = CommandReqeust(
-        command=Command(args.commmand),
+        command=Command(args.command),
         pr_name=args.pr,
         jira_issue_id=escape_issue_id(args.pr),
         jira_version_key=escape_version_key(args.pr),
