@@ -1,101 +1,47 @@
 import argparse
-import enum
-import re
-from dataclasses import dataclass, field
-from typing import Literal, Callable, List, NewType
+from typing import Callable
 
-from colorful_print import color
-from jira import JIRA, JIRAError, Issue
-from jira.resources import Version
+from colorful_print import cp
 
-JiraVersionKeysAllowed = ["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"]
-JiraVersionKeyType = NewType("JiraIssueKeyType", Literal["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"])
+from fitpet_jira.config import Command, JiraConfig, CommandReqeust
+from fitpet_jira.jira_client import JiraClient
+from fitpet_jira.utils import escape_issue_id, escape_version_key
 
 
-class Command(enum.Enum):
-    ASSIGN_VERSION = "assign_version"
+def command_assign_version(jira_config: JiraConfig, command_request: CommandReqeust):
+    jira_client = JiraClient(jira_config.jira_server, jira_config.jira_username, jira_config.jira_token)
 
+    issue = jira_client.find_issue(command_request.jira_issue_id)
+    cp.bright_green(f"Found issue {issue.key}")
 
-@dataclass(frozen=True, slots=True, init=True)
-class Config:
-    command: Literal[Command.ASSIGN_VERSION] = field(metadata={"help": "실행 명령어"})
-    pr_name: str = field(
-        metadata={"help": "Github Pull Request 이름 ([FMP-1234] [ADMIN,CONSUMER] 상품 조회 및 consumer"}
+    versions = jira_client.find_unreleased_versions(jira_config.jira_project, command_request.jira_version_key)
+    if len(versions) == 0:
+        cp.yellow(f"Could not find version by {command_request.pr_name}, so skipping.")
+        return
+
+    cp.bright_green(f"Assign version {[version.name for version in versions]} to issue {issue.key}")
+    issue.update(
+        fields={
+            "fixVersions": [{"id": version.id} for version in versions],
+        },
     )
-    jira_server: str = field(metadata={"help": "Jira Server"})
-    jira_project: str = field(metadata={"help": "Jira Project"})
-    jira_username: str = field(metadata={"help": "Jira Username"})
-    jira_token: str = field(metadata={"help": "Jira Token"})
-
-    jira_issue_key: str = field(metadata={"help": "PR 이름으로 issue_key 를 찾습니다."})
-    jira_version_key: List[JiraVersionKeyType] = field(metadata={"help": "PR 이름으로 version_key 를 찾습니다."})
 
 
-def find_issue(config: Config) -> Issue:
-    try:
-        jira = JIRA(server=config.jira_server, basic_auth=(config.jira_username, config.jira_token))
-        return jira.issue(config.jira_issue_key)
-
-    except JIRAError:
-        raise Exception(f"Could not find issue.")
-
-
-def find_unreleased_versions(config: Config) -> List[Version]:
-    try:
-        jira = JIRA(server=config.jira_server, basic_auth=(config.jira_username, config.jira_token))
-        versions = jira.project_versions(config.jira_project)
-        suspected_versions = [
-            version
-            for version in versions
-            if not version.released
-            and not version.archived
-            and any(key in version.name for key in config.jira_version_key)
-        ]
-        return suspected_versions
-
-    except JIRAError:
-        raise Exception(f"Could not find versions.")
-
-
-def command_assign_version(config: Config):
-    issue = find_issue(config)
-    versions = find_unreleased_versions(config)
-    color.yellow(f"Assign version {[version.name for version in versions]} to issue {issue.key}")
-    issue.update(fields={"fixVersions": [{"id": version.id} for version in versions]})
-
-
-def create_factory(command: Command) -> Callable[[Config], None]:
+def create_factory(command: Command) -> Callable[[JiraConfig, CommandReqeust], None]:
     if command == Command.ASSIGN_VERSION:
         return command_assign_version
     else:
         raise Exception(f"Unknown command: {command}")
 
 
-def escape_issue_key(text: str) -> str:
-    match = re.search(r"\[([A-Z]+-\d+)]", text)
-    if match:
-        return match.group(1)
-
-    return ""
-
-
-def escape_version_key(text: str) -> List[JiraVersionKeyType]:
-    match = re.search(r"\[([A-Z,\s]+)]", text)
-    if match:
-        roles = match.group(1)
-        return [role.strip() for role in roles.split(",") if role.strip() in JiraVersionKeysAllowed]
-
-    return []
-
-
-def main(config: Config):
-    if not config.jira_issue_key or not config.jira_version_key or len(config.jira_version_key) == 0:
-        color.yellow(f"Skip Command: {config.command}. Reason: Could not parse issue or version key.")
+def main(jira_config: JiraConfig, command_request: CommandReqeust):
+    if not command_request.is_ready_to_go():
+        cp.yellow(f"Skipping command '{command_request.command.value}': Missing issue ID or version key from PR name")
         return
 
-    color.green(f"Start Command: {config.command} with PR: {config.pr_name}")
-    create_factory(config.command)(config)
-    color.green(f"Finish Command: {config.command}")
+    cp.bright_green(f"[+] Starting '{command_request.command.value}' for PR: {command_request.pr_name}", bold=True)
+    create_factory(command_request.command)(jira_config, command_request)
+    cp.bright_green(f"[+] Completed '{command_request.command.value}' successfully", bold=True)
 
 
 if __name__ == "__main__":
@@ -108,14 +54,16 @@ if __name__ == "__main__":
     parser.add_argument("-jt", "--token", type=str, required=True)
     args = parser.parse_args()
 
-    parsed_config = Config(
-        command=Command(args.command),
-        pr_name=args.pr,
+    config = JiraConfig(
         jira_server=args.server,
         jira_project=args.project,
         jira_username=args.username,
         jira_token=args.token,
-        jira_issue_key=escape_issue_key(args.pr),
+    )
+    request = CommandReqeust(
+        command=Command(args.commmand),
+        pr_name=args.pr,
+        jira_issue_id=escape_issue_id(args.pr),
         jira_version_key=escape_version_key(args.pr),
     )
-    main(parsed_config)
+    main(config, request)
