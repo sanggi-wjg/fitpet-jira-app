@@ -11,6 +11,9 @@ black = "^25.11.0"
 jira = "^3.10.0"
 colorful-print = "^1.0.0"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.0"
+pytest-mock = "^3.15.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -18,3 +21,9 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.black]
 line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v"

@@ -1,4 +1,4 @@
-name: 🚜 Build and Test
+name: ✅ Build and Test
 
 on:
   push:
@@ -32,11 +32,7 @@ jobs:
             poetry-${{ runner.os }}-
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root
+        run: poetry install --no-interaction --no-root --with dev
 
-#      - name: Build the package
-#        run: poetry build
-
-#    - name: Run tests
-#      run: |
-#        poetry run pytest
+      - name: Run tests
+        run: poetry run pytest
