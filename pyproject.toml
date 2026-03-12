@@ -7,7 +7,7 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.12"
-black = "^25.11.0"
+black = "^26.3.1"
 jira = "^3.10.0"
 colorful-print = "^1.0.0"
 
