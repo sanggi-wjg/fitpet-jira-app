@@ -1,6 +1,8 @@
+import requests
 from colorful_print import cp
 from jira import JIRA, JIRAError, Issue
 from jira.resources import Version
+from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 
 class JiraClient:
@@ -8,6 +10,12 @@ class JiraClient:
     def __init__(self, server: str, username: str, token: str):
         self.jira = JIRA(server=server, basic_auth=(username, token))
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=3, max=10),
+        retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
+        reraise=True,
+    )
     def find_issue(self, issue_id: str) -> Issue:
         try:
             return self.jira.issue(issue_id)
@@ -15,6 +23,12 @@ class JiraClient:
             cp.red(f"Could not find issue '{issue_id}': {e.status_code}, {e.text}")
             raise
 
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=3, max=10),
+        retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
+        reraise=True,
+    )
     def find_unreleased_versions(self, project: str, version_key: list[str]) -> list[Version]:
         try:
             versions = self.jira.project_versions(project)
