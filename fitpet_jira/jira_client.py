@@ -12,8 +12,9 @@ class JiraClient:
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=10, max=60),
+        wait=wait_exponential(multiplier=3, max=10),
         retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
+        reraise=True,
     )
     def find_issue(self, issue_id: str) -> Issue:
         try:
@@ -24,8 +25,9 @@ class JiraClient:
 
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=10, max=60),
+        wait=wait_exponential(multiplier=3, max=10),
         retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
+        reraise=True,
     )
     def find_unreleased_versions(self, project: str, version_key: list[str]) -> list[Version]:
         try:
