@@ -54,6 +54,8 @@ if __name__ == "__main__":
     parser.add_argument("-jt", "--token", type=str, required=True)
     args = parser.parse_args()
 
+    pr_name = args.pr.replace("`", "")
+
     config = JiraConfig(
         jira_server=args.server,
         jira_project=args.project,
@@ -62,8 +64,8 @@ if __name__ == "__main__":
     )
     request = CommandReqeust(
         command=Command(args.command),
-        pr_name=args.pr,
-        jira_issue_id=escape_issue_id(args.pr),
-        jira_version_key=escape_version_key(args.pr),
+        pr_name=pr_name,
+        jira_issue_id=escape_issue_id(pr_name),
+        jira_version_key=escape_version_key(pr_name),
     )
     main(config, request)
