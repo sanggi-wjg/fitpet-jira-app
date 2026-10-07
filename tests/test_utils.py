@@ -5,7 +5,6 @@ from fitpet_jira.utils import escape_issue_id, escape_version_key
 
 
 class TestUtils:
-
     @pytest.mark.parametrize(
         "pr_name, expected",
         [

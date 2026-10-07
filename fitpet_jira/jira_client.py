@@ -1,12 +1,11 @@
 import requests
 from colorful_print import cp
-from jira import JIRA, JIRAError, Issue
+from jira import JIRA, Issue, JIRAError
 from jira.resources import Version
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
 
 class JiraClient:
-
     def __init__(self, server: str, username: str, token: str):
         self.jira = JIRA(server=server, basic_auth=(username, token))
 

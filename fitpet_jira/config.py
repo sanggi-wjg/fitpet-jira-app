@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Literal
+from typing import List, Literal
 
-JIRA_VERSION_KEYS_ALLOWED = ["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"]
 JIRA_VERSION_KEY_TYPE = Literal["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"]
+JIRA_VERSION_KEYS_ALLOWED: List[JIRA_VERSION_KEY_TYPE] = ["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"]
 
 
 class Command(StrEnum):
@@ -19,7 +19,7 @@ class JiraConfig:
 
 
 @dataclass(frozen=True, slots=True, init=True)
-class CommandReqeust:
+class CommandRequest:
     command: Command = field(metadata={"help": "실행 명령어"})
     pr_name: str = field(
         metadata={

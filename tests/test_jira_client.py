@@ -6,7 +6,6 @@ from tests.conftest import TEST_JIRA_CONFIG
 
 
 class TestJiraClient:
-
     @classmethod
     def setup_class(cls):
         cls.test_jira_config = TEST_JIRA_CONFIG
