@@ -4,6 +4,8 @@ from jira import JIRA, Issue, JIRAError
 from jira.resources import Version
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from fitpet_jira.config import JiraVersionKey
+
 
 class JiraClient:
     def __init__(self, server: str, username: str, token: str):
@@ -28,7 +30,7 @@ class JiraClient:
         retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
         reraise=True,
     )
-    def find_unreleased_versions(self, project: str, version_key: list[str]) -> list[Version]:
+    def find_unreleased_versions(self, project: str, version_key: list[JiraVersionKey]) -> list[Version]:
         try:
             versions = self.jira.project_versions(project)
             return [

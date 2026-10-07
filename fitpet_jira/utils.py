@@ -1,10 +1,6 @@
 import re
 
-from fitpet_jira.config import JIRA_VERSION_KEYS_ALLOWED
-
-
-def is_version_key(value: str) -> bool:
-    return value in JIRA_VERSION_KEYS_ALLOWED
+from fitpet_jira.config import JiraVersionKey
 
 
 def escape_issue_id(text: str) -> str:
@@ -22,7 +18,7 @@ def escape_issue_id(text: str) -> str:
     return ""
 
 
-def escape_version_key(text: str) -> JIRA_VERSION_KEYS_ALLOWED:
+def escape_version_key(text: str) -> list[JiraVersionKey]:
     """
     PR 이름에서 Version Key 목록을 추출합니다.
 
@@ -33,6 +29,6 @@ def escape_version_key(text: str) -> JIRA_VERSION_KEYS_ALLOWED:
     match = re.search(r"\[([A-Z,\s]+)]", text)
     if match:
         roles = [role.strip() for role in match.group(1).split(",")]
-        return [role for role in roles if is_version_key(role)]
+        return [JiraVersionKey(role) for role in roles if role in JiraVersionKey]
 
     return []

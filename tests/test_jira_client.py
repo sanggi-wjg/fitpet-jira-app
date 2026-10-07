@@ -1,6 +1,7 @@
 import pytest
 from jira import JIRAError
 
+from fitpet_jira.config import JiraVersionKey
 from fitpet_jira.jira_client import JiraClient
 from tests.conftest import TEST_JIRA_CONFIG
 
@@ -65,7 +66,7 @@ class TestJiraClient:
         # mock
         mock_jira.return_value.project_versions.return_value = mock_versions
 
-        result = jira_client.find_unreleased_versions("FMP", ["ADMIN", "CONSUMER"])
+        result = jira_client.find_unreleased_versions("FMP", [JiraVersionKey.ADMIN, JiraVersionKey.CONSUMER])
 
         assert len(result) == 2
 
