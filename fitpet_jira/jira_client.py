@@ -4,12 +4,16 @@ from jira import JIRA, Issue, JIRAError
 from jira.resources import Version
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
+from fitpet_jira.config import JiraConfig
 from fitpet_jira.models import JiraVersionKey
 
 
 class JiraClient:
-    def __init__(self, server: str, username: str, token: str):
-        self.jira = JIRA(server=server, basic_auth=(username, token))
+    def __init__(self, config: JiraConfig):
+        self.jira = JIRA(
+            server=config.server,
+            basic_auth=(config.username.get_secret_value(), config.token.get_secret_value()),
+        )
 
     @retry(
         stop=stop_after_attempt(3),
@@ -44,10 +48,13 @@ class JiraClient:
         retry=retry_if_exception_type((JIRAError, requests.exceptions.ReadTimeout)),
         reraise=True,
     )
-    def find_latest_released_version(self, project: str, version_key: JiraVersionKey) -> Version:
+    def find_latest_released_version(self, project: str, version_key: JiraVersionKey) -> Version | None:
         try:
             versions: list[Version] = self.jira.project_versions(project)
             released_versions = [version for version in versions if _is_released_version(version, version_key)]
+            if not released_versions:
+                return None
+
             return max(
                 released_versions,
                 key=lambda version: version.releaseDate,

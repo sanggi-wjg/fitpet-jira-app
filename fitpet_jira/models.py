@@ -1,7 +1,6 @@
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
-from typing_extensions import deprecated
 
 
 class JiraVersionKey(StrEnum):
@@ -11,12 +10,6 @@ class JiraVersionKey(StrEnum):
     CONSUMER = "CONSUMER"
     BATCH = "BATCH"
     LEGACY = "LEGACY"
-
-
-@deprecated("typer로 대체할 예정입니다.")
-class Command(StrEnum):
-    ASSIGN_VERSION = "assign_version"
-    CREATE_RELEASE = "create_release"
 
 
 class AssignVersionRequest(BaseModel):
@@ -32,7 +25,7 @@ class AssignVersionRequest(BaseModel):
         description="PR 이름으로 version_key 를 찾습니다. (예시 pr_name 경우, ADMIN,CONSUMER 입니다) ",
     )
 
-    def is_ready_to_go_go(self) -> bool:
+    def is_ready_to_go(self) -> bool:
         return all(
             [
                 self.jira_issue_id,
