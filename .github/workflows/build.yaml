@@ -9,30 +9,30 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '3.14' ]
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - name: Install uv
+        uses: astral-sh/setup-uv@v10.2.0
         with:
-          python-version: '3.12'
-
-      - name: Install Poetry
-        uses: abatilo/actions-poetry@v4
-        with:
-          poetry-version: '2.1.2'
-
-      - name: Cache Poetry virtualenv
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pypoetry
-          key: poetry-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            poetry-${{ runner.os }}-
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
 
       - name: Install dependencies
-        run: poetry install --no-interaction --no-root --with dev
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check --output-format=github .
+
+      - name: Check formatting
+        run: uv run ruff format --check .
+
+      - name: Type check
+        run: uv run pyright
 
       - name: Run tests
-        run: poetry run pytest
+        run: uv run pytest

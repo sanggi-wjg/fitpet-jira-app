@@ -1,13 +1,19 @@
 from dataclasses import dataclass, field
 from enum import StrEnum
-from typing import Literal
 
-JIRA_VERSION_KEYS_ALLOWED = ["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"]
-JIRA_VERSION_KEY_TYPE = Literal["API", "ADMIN", "SELLER", "CONSUMER", "BATCH", "LEGACY"]
+
+class JiraVersionKey(StrEnum):
+    API = "API"
+    ADMIN = "ADMIN"
+    SELLER = "SELLER"
+    CONSUMER = "CONSUMER"
+    BATCH = "BATCH"
+    LEGACY = "LEGACY"
 
 
 class Command(StrEnum):
     ASSIGN_VERSION = "assign_version"
+    CREATE_RELEASE = "create_release"
 
 
 @dataclass(frozen=True, slots=True, init=True)
@@ -19,7 +25,7 @@ class JiraConfig:
 
 
 @dataclass(frozen=True, slots=True, init=True)
-class CommandReqeust:
+class CommandRequest:
     command: Command = field(metadata={"help": "실행 명령어"})
     pr_name: str = field(
         metadata={
@@ -31,7 +37,7 @@ class CommandReqeust:
             "help": "PR 이름으로 issue_id 를 찾습니다. (예시 pr_name 경우, FMP-1234 입니다) ",
         },
     )
-    jira_version_key: list[JIRA_VERSION_KEY_TYPE] = field(
+    jira_version_key: list[JiraVersionKey] = field(
         metadata={
             "help": "PR 이름으로 version_key 를 찾습니다. (예시 pr_name 경우, ADMIN,CONSUMER 입니다) ",
         },

@@ -1,11 +1,10 @@
 import pytest
 
-from fitpet_jira.config import JIRA_VERSION_KEYS_ALLOWED
+from fitpet_jira.config import JiraVersionKey
 from fitpet_jira.utils import escape_issue_id, escape_version_key
 
 
 class TestUtils:
-
     @pytest.mark.parametrize(
         "pr_name, expected",
         [
@@ -31,6 +30,6 @@ class TestUtils:
     def test_escape_version_key(self, pr_name, expected):
         assert escape_version_key(pr_name) == expected
 
-    @pytest.mark.parametrize("key", JIRA_VERSION_KEYS_ALLOWED)
+    @pytest.mark.parametrize("key", list(JiraVersionKey))
     def test_all_allowed_keys(self, key):
         assert escape_version_key(f"[FMP-1234] [{key}] Fix bug") == [key]

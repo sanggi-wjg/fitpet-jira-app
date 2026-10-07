@@ -3,12 +3,12 @@ from typing import Callable
 
 from colorful_print import cp
 
-from fitpet_jira.config import Command, JiraConfig, CommandReqeust
+from fitpet_jira.config import Command, CommandRequest, JiraConfig
 from fitpet_jira.jira_client import JiraClient
 from fitpet_jira.utils import escape_issue_id, escape_version_key
 
 
-def command_assign_version(jira_config: JiraConfig, command_request: CommandReqeust):
+def command_assign_version(jira_config: JiraConfig, command_request: CommandRequest):
     jira_client = JiraClient(jira_config.jira_server, jira_config.jira_username, jira_config.jira_token)
 
     issue = jira_client.find_issue(command_request.jira_issue_id)
@@ -27,14 +27,14 @@ def command_assign_version(jira_config: JiraConfig, command_request: CommandReqe
     )
 
 
-def create_factory(command: Command) -> Callable[[JiraConfig, CommandReqeust], None]:
+def create_factory(command: Command) -> Callable[[JiraConfig, CommandRequest], None]:
     if command == Command.ASSIGN_VERSION:
         return command_assign_version
     else:
         raise Exception(f"Unknown command: {command}")
 
 
-def main(jira_config: JiraConfig, command_request: CommandReqeust):
+def main(jira_config: JiraConfig, command_request: CommandRequest):
     if not command_request.is_ready_to_go():
         cp.yellow(f"Skipping command '{command_request.command.value}': Missing issue ID or version key from PR name")
         return
@@ -62,7 +62,7 @@ if __name__ == "__main__":
         jira_username=args.username,
         jira_token=args.token,
     )
-    request = CommandReqeust(
+    request = CommandRequest(
         command=Command(args.command),
         pr_name=pr_name,
         jira_issue_id=escape_issue_id(pr_name),
