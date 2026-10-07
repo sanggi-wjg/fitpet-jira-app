@@ -1,15 +1,16 @@
 import pytest
 from jira import Issue
 from jira.resources import Version
+from pydantic import SecretStr
 
 from fitpet_jira import jira_client
 from fitpet_jira.config import JiraConfig
 
 TEST_JIRA_CONFIG = JiraConfig(
-    jira_server="https://test-jira.atlassian.net",
-    jira_project="FMP",
-    jira_username="test@example.com",
-    jira_token="test-token-12345",
+    server="https://test-jira.atlassian.net",
+    project="FMP",
+    username=SecretStr("test@example.com"),
+    token=SecretStr("test-token-12345"),
 )
 
 
@@ -25,12 +26,16 @@ def _create_mock_version(
     name: str,
     released: bool = False,
     archived: bool = False,
+    release_date: str | None = None,
 ) -> Version:
     mock_version = mocker.create_autospec(Version, instance=True)
     mock_version.id = version_id
     mock_version.name = name
     mock_version.released = released
     mock_version.archived = archived
+    # Jira 는 릴리즈 날짜가 없는 버전에 releaseDate 속성 자체를 내려주지 않는다
+    if release_date is not None:
+        mock_version.releaseDate = release_date
     return mock_version
 
 
