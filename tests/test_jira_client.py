@@ -1,8 +1,8 @@
 import pytest
 from jira import JIRAError
 
-from fitpet_jira.config import JiraVersionKey
 from fitpet_jira.jira_client import JiraClient
+from fitpet_jira.models import JiraVersionKey
 from tests.conftest import TEST_JIRA_CONFIG
 
 
@@ -73,3 +73,32 @@ class TestJiraClient:
         version_names = [v.name for v in result]
         assert "1.0.0-ADMIN-release" in version_names
         assert "1.0.0-CONSUMER-release" in version_names
+
+    def test_create_version_success(self, mock_jira):
+        jira_client = JiraClient(
+            server=self.test_jira_config.jira_server,
+            username=self.test_jira_config.jira_username,
+            token=self.test_jira_config.jira_token,
+        )
+
+        jira_client.create_version("FMP", "BE-MALL-LEGACY-3.13.7")
+
+        mock_jira.return_value.create_version.assert_called_once_with(name="BE-MALL-LEGACY-3.13.7", project="FMP")
+
+    def test_create_version_failure_not_retried(self, mock_jira):
+        jira_client = JiraClient(
+            server=self.test_jira_config.jira_server,
+            username=self.test_jira_config.jira_username,
+            token=self.test_jira_config.jira_token,
+        )
+
+        # mock
+        mock_jira.return_value.create_version.side_effect = JIRAError(
+            status_code=400,
+            text="A version with this name already exists in this project.",
+        )
+
+        with pytest.raises(JIRAError):
+            jira_client.create_version("FMP", "BE-MALL-LEGACY-3.13.7")
+
+        assert mock_jira.return_value.create_version.call_count == 1

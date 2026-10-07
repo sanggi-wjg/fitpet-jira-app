@@ -1,71 +1,91 @@
-import argparse
-from typing import Callable
+from typing import Annotated
 
+import typer
 from colorful_print import cp
 
-from fitpet_jira.config import Command, CommandRequest, JiraConfig
+from fitpet_jira.config import JiraConfig
 from fitpet_jira.jira_client import JiraClient
-from fitpet_jira.utils import escape_issue_id, escape_version_key
+from fitpet_jira.models import AssignVersionRequest, JiraVersionKey
+from fitpet_jira.util.pr_parser import extract_issue_id, extract_version_keys
+from fitpet_jira.util.version_name import bump_patch_version
+
+app = typer.Typer()
 
 
-def command_assign_version(jira_config: JiraConfig, command_request: CommandRequest):
-    jira_client = JiraClient(jira_config.jira_server, jira_config.jira_username, jira_config.jira_token)
+@app.command(name="assign-version", help="PR을 적절한 지라 릴리즈 버전에 할당합니다")
+def command_assign_version(
+    server: Annotated[str, typer.Option("--server", help="Jira 서버 주소 (예시, https://xxx.atlassian.net)")],
+    project: Annotated[str, typer.Option("--project", help="Jira 프로젝트 키 (예시, FMP)")],
+    username: Annotated[str, typer.Option("--username", help="Jira 계정 이메일")],
+    token: Annotated[str, typer.Option("--token", help="Jira API 토큰")],
+    pr: Annotated[
+        str,
+        typer.Option(
+            "--pr",
+            help="Github PR 이름 (예시, [FMP-1234] [ADMIN,CONSUMER] 상품 조회 API 구현) / "
+            "띄워쓰기가 있으니 따움표로 감싸주는 것을 잊지말아주세요.",
+        ),
+    ],
+):
+    jira_config = JiraConfig(
+        jira_server=server,
+        jira_project=project,
+        jira_username=username,
+        jira_token=token,
+    )
+    pr_name = pr.replace("`", "")
+    request = AssignVersionRequest(
+        pr_name=pr_name,
+        jira_issue_id=extract_issue_id(pr_name),
+        jira_version_keys=extract_version_keys(pr_name),
+    )
 
-    issue = jira_client.find_issue(command_request.jira_issue_id)
-    cp.bright_green(f"Found issue {issue.key}")
-
-    versions = jira_client.find_unreleased_versions(jira_config.jira_project, command_request.jira_version_key)
-    if len(versions) == 0:
-        cp.yellow(f"Could not find version by {command_request.pr_name}, so skipping.")
+    if not request.is_ready_to_go_go():
+        cp.yellow("assign-version을 건너뜁니다: PR 이름에서 이슈 ID 또는 버전 키를 찾지 못했습니다")
         return
 
-    cp.bright_green(f"Assign version {[version.name for version in versions]} to issue {issue.key}")
+    jira_client = JiraClient(jira_config.jira_server, jira_config.jira_username, jira_config.jira_token)
+    issue = jira_client.find_issue(request.jira_issue_id)
+    cp.bright_green(f"이슈를 찾았습니다: {issue.key}")
+
+    versions = jira_client.find_unreleased_versions(jira_config.jira_project, request.jira_version_keys)
+    if len(versions) == 0:
+        cp.yellow(f"PR 이름에 해당하는 버전을 찾지 못해 건너뜁니다: {request.pr_name}")
+        return
+
+    cp.bright_green(f"이슈 {issue.key}에 버전을 할당합니다: {[version.name for version in versions]}")
     issue.update(
         fields={
             "fixVersions": [{"id": version.id} for version in versions],
         },
     )
+    cp.bright_green("😎 작업 완료")
 
 
-def create_factory(command: Command) -> Callable[[JiraConfig, CommandRequest], None]:
-    if command == Command.ASSIGN_VERSION:
-        return command_assign_version
-    else:
-        raise Exception(f"Unknown command: {command}")
+@app.command("create-release", help="신규 릴리즈를 생성합니다.")
+def command_create_release(
+    server: Annotated[str, typer.Option("--server", help="Jira 서버 주소 (예시, https://xxx.atlassian.net)")],
+    project: Annotated[str, typer.Option("--project", help="Jira 프로젝트 키 (예시, FMP)")],
+    username: Annotated[str, typer.Option("--username", help="Jira 계정 이메일")],
+    token: Annotated[str, typer.Option("--token", help="Jira API 토큰")],
+    version_key: Annotated[str, typer.Option("--version-key", help="릴리즈 버전 키")],
+):
+    jira_config = JiraConfig(
+        jira_server=server,
+        jira_project=project,
+        jira_username=username,
+        jira_token=token,
+    )
 
+    jira_client = JiraClient(jira_config.jira_server, jira_config.jira_username, jira_config.jira_token)
+    latest_version = jira_client.find_latest_released_version(jira_config.jira_project, JiraVersionKey(version_key))
+    cp.bright_green(f"최신 릴리즈 버전을 찾았습니다: {latest_version.name}")
 
-def main(jira_config: JiraConfig, command_request: CommandRequest):
-    if not command_request.is_ready_to_go():
-        cp.yellow(f"Skipping command '{command_request.command.value}': Missing issue ID or version key from PR name")
-        return
-
-    cp.bright_green(f"[+] Starting '{command_request.command.value}' for PR: {command_request.pr_name}", bold=True)
-    create_factory(command_request.command)(jira_config, command_request)
-    cp.bright_green(f"[+] Completed '{command_request.command.value}' successfully", bold=True)
+    new_version = bump_patch_version(latest_version.name)
+    cp.bright_green(f"새로운 릴리즈 버전을 생성합니다: {new_version}")
+    jira_client.create_version(jira_config.jira_project, new_version)
+    cp.bright_green("😎 작업 완료")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Handling arguments.")
-    parser.add_argument("-c", "--command", type=str, required=True)
-    parser.add_argument("-p", "--pr", type=str, required=True)
-    parser.add_argument("-js", "--server", type=str, required=True)
-    parser.add_argument("-jp", "--project", type=str, required=True)
-    parser.add_argument("-ju", "--username", type=str, required=True)
-    parser.add_argument("-jt", "--token", type=str, required=True)
-    args = parser.parse_args()
-
-    pr_name = args.pr.replace("`", "")
-
-    config = JiraConfig(
-        jira_server=args.server,
-        jira_project=args.project,
-        jira_username=args.username,
-        jira_token=args.token,
-    )
-    request = CommandRequest(
-        command=Command(args.command),
-        pr_name=pr_name,
-        jira_issue_id=escape_issue_id(pr_name),
-        jira_version_key=escape_version_key(pr_name),
-    )
-    main(config, request)
+    app()

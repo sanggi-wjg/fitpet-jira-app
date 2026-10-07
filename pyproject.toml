@@ -9,6 +9,8 @@ dependencies = [
     "jira>=3.10.5,<4",
     "colorful-print==1.1.0",
     "tenacity>=9.1.4,<10",
+    "pydantic>=2.13.5,<3",
+    "typer>=0.27.3,<0.28",
 ]
 
 [dependency-groups]
