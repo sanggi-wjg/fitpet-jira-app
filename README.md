@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Install uv
-        uses: astral-sh/setup-uv@v10
+        uses: astral-sh/setup-uv@v10.2.0
 
       - name: Clone repo
         run: |
